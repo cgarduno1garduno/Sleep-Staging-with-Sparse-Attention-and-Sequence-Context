@@ -17,7 +17,7 @@ The work evolved across four studies, each answering one question before the nex
 
 1. **Efficiency Wins**: Sparse attention outperforms O(L²) full attention by +0.027 kappa — consistently directional across all 5 folds, not a mean artifact. EEG tokens only need to talk to their neighbors.
 2. **The Power of Context**: Adding just one neighboring epoch on each side (90s total) boosted N1-F1 by **13%** and broke the N1 precision ceiling that neither focal loss, class weighting, nor multitask learning could address. N1 is defined sequentially (Wake→N1→N2) — a per-epoch model cannot resolve the ambiguity intrinsic to N1's temporal definition.
-3. **Wearable Ready**: We matched 3-channel performance using only **2-channels** (Fpz-Cz + EOG), with Δκ=0.003 — not directionally consistent across folds. A single frontal EEG electrode plus EOG is the minimum AASM-required setup for REM detection and loses nothing compared to full PSG once context is available.
+3. **Wearable Ready**: 3-channel performance is matched using only **2-channels** (Fpz-Cz + EOG), with Δκ=0.003 — not directionally consistent across folds. A single frontal EEG electrode plus EOG is the minimum AASM-required setup for REM detection and loses nothing compared to full PSG once context is available.
 4. **Closing the Gap**: Zero-shot transfer to ISRUC collapsed to κ=0.42 — driven by channel mismatch, not population shift. Joint training on both datasets recovered 60% of the gap (κ=0.68) while preserving within-dataset accuracy. The cross-dataset failure is a training-data problem, not an architectural limit.
 5. **Free N1 Gain**: Post-hoc N1 threshold calibration adds +0.021 N1-F1 at zero training cost, confirming systematic model miscalibration that is correctable at inference time.
 
@@ -29,7 +29,7 @@ The model is designed to be lean and efficient, processing a sliding window of 3
 
 ### 1. Sparse (Local) Attention
 
-Why attend to the whole 3000-sample sequence when you can just look at your neighbors? We use a window size $W=64$, which keeps things fast and lightweight:
+Why attend to the whole 3000-sample sequence when you can just look at your neighbors? A window size of $W=64$ keeps things fast and lightweight:
 
 $$ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V $$
 
@@ -45,7 +45,7 @@ This 8K parameter increase (214K → 222K) yields a +0.024 κ improvement. The m
 
 ### 3. Addressing N1 Staging (Focal Loss)
 
-N1 is famously difficult to get right. To help the model stay focused on these tricky examples, we use **Multiclass Focal Loss**:
+N1 is famously difficult to get right. To help the model stay focused on these tricky examples, the loss function used is **Multiclass Focal Loss**:
 
 $$ \text{FL}(p_t) = -(1 - p_t)^\gamma \log(p_t) $$
 
@@ -53,11 +53,11 @@ With $\gamma=2.0$. Note: focal loss alone cannot break the N1 precision ceiling 
 
 ### 4. Multi-Task Learning (Uncertainty Weighting)
 
-We train for both Staging and Transition Detection. To keep the tasks in balance without manual tuning, we use **Homoscedastic Uncertainty Weighting**:
+Training covers both Staging and Transition Detection. **Homoscedastic Uncertainty Weighting** keeps the tasks in balance without manual tuning:
 
 $$ \mathcal{L}_{total} = \sum_{i} \frac{1}{2\sigma_i^2} \mathcal{L}_i + \log(\sigma) $$
 
-*(Note: We set $\alpha=0$ for all final staging runs. The transition head does learn real signal — AUC=0.785 — but the gradient it produces competes with staging refinement at N1/N2 boundaries rather than complementing it. The infrastructure is there if you need it, and the failure mechanism is documented in `study_02/README.md`.)*
+*(Note: $\alpha=0$ for all final staging runs. The transition head does learn real signal — AUC=0.785 — but the gradient it produces competes with staging refinement at N1/N2 boundaries rather than complementing it. The infrastructure is there if you need it, and the failure mechanism is documented in `study_02/README.md`.)*
 
 ---
 
