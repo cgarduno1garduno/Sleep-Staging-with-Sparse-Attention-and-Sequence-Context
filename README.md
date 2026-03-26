@@ -1,6 +1,6 @@
 # Sleep Staging with Sparse Attention and Sequence Context
 
-Automated sleep stage classification using an efficient sparse-attention Transformer (ContextTASA) trained on Sleep-EDF-78 and evaluated for cross-dataset generalization on ISRUC Subgroup 1.
+Automated sleep stage classification using an efficient sparse-attention transformer trained on Sleep-EDF-78 and evaluated for cross-dataset generalization on ISRUC Subgroup 1.
 
 ---
 
@@ -13,13 +13,13 @@ This repository contains the code and result summaries for a four-study research
 3. **2-channel wearable configuration** (Fpz-Cz + EOG) nearly matches 3-channel performance, enabling ambulatory use (Study 2: delta-kappa = 0.003).
 4. **Joint Sleep-EDF + ISRUC training** largely closes the zero-shot generalization gap, recovering most of the cross-dataset kappa loss (Study 4 vs Study 3).
 
-The proposed model, **ContextTASA**, uses 222K parameters — 55% fewer than TinySleepNet — while matching or approaching competitive performance.
+The proposed model uses 222K parameters — 55% fewer than TinySleepNet — while matching or approaching competitive performance.
 
 ---
 
 ## Architecture
 
-**ContextTASA** processes a window of 3 consecutive 30-second epochs (prev, center, next) through a shared backbone:
+The proposed architecture processes a window of 3 consecutive 30-second epochs (prev, center, next) through a shared backbone:
 
 ```
 Input: (B, 3, C, 3000)    — batch of epoch triplets
@@ -43,13 +43,18 @@ Key design choices:
 - **Context window = 1**: 3 epochs (90 seconds) of context; wider windows did not improve results
 - **alpha=0 (no transition task)**: the auxiliary transition head (2,113 params) is present but receives zero gradient during training; removing it entirely produced identical results
 
+**Architecture Consistency**: The core backbone (Conv1-d embedding + 4-layer sparse transformer) is identical across all studies. The only variations are:
+1. **Input Channels**: Study 1 uses 1-ch, while others use 2 or 3 channels.
+2. **Context Window**: Study 1 is single-epoch, while others use a 3-epoch window.
+3. **Training Data**: Studies 1-2 use Sleep-EDF, Study 3 is zero-shot, and Study 4 is joint-domain training.
+
 ---
 
 ## Results Summary
 
 All results are reported as mean +/- std across 5 folds of subject-level cross-validation.
 
-### Study 1 — Single-epoch ConfigurableTASA, Sleep-EDF-78
+### Study 1 — Single-epoch baseline (no context), Sleep-EDF-78
 
 | Config | kappa | N1-F1 | Notes |
 |---|---|---|---|
@@ -58,7 +63,7 @@ All results are reported as mean +/- std across 5 folds of subject-level cross-v
 | 2ch_FpzCz_EOG | 0.7285 +/- 0.023 | — | wearable baseline |
 | 1ch_FpzCz | 0.6991 +/- 0.032 | — | single channel |
 
-### Study 2 — ContextTASA with 3-epoch context, Sleep-EDF-78
+### Study 2 — Proposed model with 3-epoch context, Sleep-EDF-78
 
 | Config | kappa | N1-F1 | Notes |
 |---|---|---|---|
@@ -164,7 +169,7 @@ python scripts/train_sleepedf.py \
 
 To replicate the full 45-experiment Study 1 ablation grid, omit `--experiments`.
 
-### Study 2 — ContextTASA with sequence context (Sleep-EDF)
+### Study 2 — Sequence context experiments (Sleep-EDF)
 
 Use the Study 1 fold assignments for direct comparability:
 
@@ -218,7 +223,7 @@ sleep-staging-repo/
 ├── src/
 │   ├── config.py                    # All paths and hyperparameters
 │   ├── models/
-│   │   ├── configurable.py          # ConfigurableTASA + ContextTASA (primary models)
+│   │   ├── configurable.py          # Primary model implementations
 │   │   ├── backbones.py             # Original SparseTransformerBackbone (Study 1 prototype)
 │   │   ├── heads.py                 # SleepStagingHead, TransitionDetectionHead
 │   │   └── mtl_model.py             # MTLSleepModel (Study 1 prototype)
