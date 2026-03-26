@@ -39,7 +39,7 @@ Where $M_{ij} = -\infty$ if $|i-j| > W$. For a sequence of length L=750 (after t
 
 The base model (214K parameters) classifies each 30-second epoch independently. The proposed model extends this by processing a window of 3 consecutive epochs `(prev, center, next)` through the shared backbone. Each epoch's embedding is produced independently (same weights), then all three are concatenated before the staging head:
 
-$$ \hat{y}_t = f_{\text{stage}}\!\left([e_{t-1} \,\|\, e_t \,\|\, e_{t+1}]\right) \in \mathbb{R}^5 $$
+$$ \hat{y}_t = f_{\text{stage}}\left([e_{t-1} \,\|\, e_t \,\|\, e_{t+1}]\right) \in \mathbb{R}^5 $$
 
 This 8K parameter increase (214K → 222K) yields a +0.024 κ improvement. The mechanism: a morphologically ambiguous epoch that follows a Wake epoch is almost certainly N1. The same epoch following N2 is almost certainly N2. Without context, both are treated identically.
 
