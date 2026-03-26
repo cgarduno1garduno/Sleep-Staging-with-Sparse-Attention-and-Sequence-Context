@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pt
+*.npz
+*.edf
+*.rec
+data/
+data_ISRUC/
+processed_data/
+.DS_Store
+*.egg-info/
+.env
